@@ -11,7 +11,13 @@ class userDB:
     )
         self.mycursor = self.mydb.cursor()
 
-    def select(self, id:int):
+    def select_all(self, limit=1000):
+        sql = f"""SELECT * FROM `user` LIMIT {limit}"""
+        self.mycursor.execute(sql)
+        result = self.mycursor.fetchall()
+        return result
+
+    def select_one(self, id:int):
         result = {}
         sql = f"""SELECT * FROM `user` WHERE user.id={id}"""
         self.mycursor.execute(sql)

@@ -24,9 +24,13 @@ app.add_middleware(
 def main():
     return {"msg": "Hello world"}
 
+@app.get("user/")
+def readAll_data(limit=1000):
+    return mydb.select_all(limit=limit)
+
 @app.get("/user/{id}")
 def read_data(id:int):
-    return mydb.select(id=id)
+    return mydb.select_one(id=id)
 
 @app.post("/user/")
 def insert_data(username:str, password:str, email:str, firstname:str, lastname:str, birthday:datetime.datetime, is_business=0, business_name="NULL", business_type="NULL"):
