@@ -6,7 +6,7 @@ import datetime
 
 app = FastAPI()
 
-mydb = userDB(host="localhost", user="root", password="Pongsakon_123", database="carboncredit")
+mydb = userDB(host="carboncredit.chorrqwi2g7b.us-east-2.rds.amazonaws.com", user="admin", password="CoalLa1234", database="carboncredit_db")
 
 origins = [
     "http://localhost"
