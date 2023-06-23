@@ -22,7 +22,10 @@ class userDB:
 
         for row_i in row:
             for idx, r in enumerate(row_i[:-1]):
-                result[column[idx]] = r
+                result[row_i[0]] = {column[1]:row_i[1], column[2]:row_i[2], column[3]:row_i[3],
+                                    column[4]:row_i[4], column[5]:row_i[5], column[6]:row_i[6],
+                                    column[7]:row_i[7], column[8]:row_i[8], column[9]:row_i[9],
+                                    column[10]:row_i[10], column[11]:row_i[11],}
         return result
 
     def select_one(self, id:int):
