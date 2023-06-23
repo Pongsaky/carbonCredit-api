@@ -14,9 +14,15 @@ class userDB:
         self.mycursor = self.mydb.cursor()
 
     def select_all(self, limit=1000):
+        result = {}
         sql = f"""SELECT * FROM `user`"""
         self.mycursor.execute(sql)
-        result = self.mycursor.fetchall()
+        column = ["id", "username", "password", "email", "firstname", "lastname", "is_business", "business_name", "business_type", "bod", "cash_balance", "cc_balance"]
+        row = self.mycursor.fetchall()
+
+        for row_i in row:
+            for idx, r in enumerate(row_i[:-1]):
+                result[column[idx]] = r
         return result
 
     def select_one(self, id:int):
