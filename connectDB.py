@@ -1,18 +1,20 @@
 import mysql.connector
 import datetime
 
-class userDB:
-    def __init__(self, host, user, password, database):
-        self.mydb = mysql.connector.connect(
-        host=host,
-        user=user,
-        password=password,
-        database=database
+mydb = mysql.connector.connect(
+        host="carboncredit.chorrqwi2g7b.us-east-2.rds.amazonaws.com",
+        user="admin",
+        password="CoalLa1234",
+        database="carboncredit_db"
     )
+print("Connection sucessfully")
+class userDB:
+    def __init__(self):
+        self.mydb = mydb
         self.mycursor = self.mydb.cursor()
 
     def select_all(self, limit=1000):
-        sql = f"""SELECT * FROM `user` LIMIT {limit}"""
+        sql = f"""SELECT * FROM `user`"""
         self.mycursor.execute(sql)
         result = self.mycursor.fetchall()
         return result
@@ -28,17 +30,17 @@ class userDB:
             result[column[idx]] = r
         return result
 
-    def insert(self, username:str, password:str, email:str, firstname:str, lastname:str, birthday:datetime.datetime, is_business=0, business_name="NULL", business_type="NULL"):
+    def insert(self, username:str, password:str, email:str, firstname:str, lastname:str, birthday:datetime.datetime, is_business=0, business_name="NULL", business_type="NULL", created_at=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')):
         sql = f"INSERT INTO `user` (`username`, `password`, `email`, `firstname`, `lastname`, `is_business`, `business_name`, `business_type`, `birthday`) VALUES ('{username}', '{password}', '{email}', '{firstname}', '{lastname}', {is_business}, '{business_name}', '{business_type}', '{birthday}');"
         self.mycursor.execute(sql)
         self.mydb.commit()
-        print("INSERT SUCESSFULLY")
+        return {"msg": "INSERT SUCESSFULLY"}
     
     def delete(self, id:int):
         sql = f"DELETE FROM `user` WHERE user.id={id}"
         self.mycursor.execute(sql)
         self.mydb.commit()
-        print("DELETE SUCESSFULLY")
+        return {"msg": "DELETE SUCESSFULLY"}
 
     def update(self, id:int, username="", password="", email="", firstname="", lastname="", birthday="", is_business="", business_name="", business_type=""):
         user_selected = self.select(id=id)
@@ -63,8 +65,48 @@ class userDB:
 
         sql = f"""UPDATE `user` SET `username`='{username}', `password`='{password}', `email`='{email}', `firstname`='{firstname}', `lastname`='{lastname}', `is_business`='{is_business}', `business_name`='{business_name}', `business_type`='{business_type}', `birthday`='{birthday}'
                 WHERE `id`={id};"""
-        
-        print(sql)
+
         self.mycursor.execute(sql)
         self.mydb.commit()
-        print("UPDATE SUCESSFULLY")
+        return {"msg": "UPDATE SUCESSFULLY"}
+
+class transactionDB:
+    def __init__(self):
+        self.mydb = mydb
+        self.mycursor = self.mydb.cursor()
+
+    def transfer(self, user_id, send_id, receive_id, amount:int, status=1):
+        if amount<0:
+            return {"msg": "amount must more than 0"}
+        # Get current cash_balance and cc_balance
+        result = {}
+        sql_current = f"""SELECT id, cc_balance, cash_balance FROM `user` WHERE id IN ({send_id},{receive_id});"""
+        self.mycursor.execute(sql_current)
+        row = self.mycursor.fetchall()
+        for row_i in row:
+            result[row_i[0]] = {"cc_balance": row_i[1], "cash_balance": row_i[2]}
+
+        send_current = result[send_id]
+        receive_current = result[receive_id]
+
+        # transfer cc_balance
+        # NOTE!!! cash_balance is not calculate yet
+        if float(send_current["cc_balance"])-amount >= 0:
+            # Update cash_balance, cc_balance
+            sql_send = f"""UPDATE `user` SET `cc_balance`={float(send_current["cc_balance"])-amount} WHERE id={send_id}"""
+            sql_receive = f"""UPDATE `user` SET `cc_balance`={float(receive_current["cc_balance"])+amount} WHERE id={receive_id}"""
+            self.mycursor.execute(sql_send)
+            self.mydb.commit()
+            self.mycursor.execute(sql_receive)
+            self.mydb.commit()
+
+            # Insert transaction
+            sql = f"""INSERT INTO `cc_transaction` (`user_id`, `send_id`, `receive_id`, `amount`, `status`) 
+                    VALUES ('{user_id}', '{send_id}', '{receive_id}', '{amount}', '{status}');"""
+            self.mycursor.execute(sql)
+            self.mydb.commit()
+            return {"msg": "Transfering is sucessfully"}
+        else:
+            return {"msg": "cc_balance is not enough for transfering."}
+
+    # def deposit_cash(self, user_id, send_id, receive_id, amount:int, status=1):
