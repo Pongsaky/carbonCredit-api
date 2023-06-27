@@ -2,10 +2,10 @@ import mysql.connector
 import datetime
 
 mydb = mysql.connector.connect(
-        host="carboncredit.chorrqwi2g7b.us-east-2.rds.amazonaws.com",
-        user="admin",
+        host="34.143.137.245",
+        user="root",
         password="CoalLa1234",
-        database="carboncredit_db"
+        database="carboncredit"
     )
 print("Connection sucessfully")
 class userDB:
@@ -34,13 +34,15 @@ class userDB:
         self.mycursor.execute(sql)
         column = ["id", "username", "password", "email", "firstname", "lastname", "is_business", "business_name", "business_type", "bod", "cash_balance", "cc_balance"]
         row = self.mycursor.fetchone()
+        if row == None:
+            return {"msg" : f"Not found user_id = {id}"}
     
         for idx, r in enumerate(row[:-1]):
             result[column[idx]] = r
         return result
 
     def insert(self, username:str, password:str, email:str, firstname:str, lastname:str, birthday:datetime.datetime, is_business=0, business_name="NULL", business_type="NULL", created_at=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')):
-        sql = f"INSERT INTO `user` (`username`, `password`, `email`, `firstname`, `lastname`, `is_business`, `business_name`, `business_type`, `birthday`) VALUES ('{username}', '{password}', '{email}', '{firstname}', '{lastname}', {is_business}, '{business_name}', '{business_type}', '{birthday}');"
+        sql = f"INSERT INTO `user` (`username`, `password`, `email`, `firstname`, `lastname`, `is_business`, `business_name`, `business_type`, `birthday`, `created_at`) VALUES ('{username}', '{password}', '{email}', '{firstname}', '{lastname}', {is_business}, '{business_name}', '{business_type}', '{birthday}', '{created_at}');"
         self.mycursor.execute(sql)
         self.mydb.commit()
         return {"msg": "INSERT SUCESSFULLY"}
@@ -52,7 +54,7 @@ class userDB:
         return {"msg": "DELETE SUCESSFULLY"}
 
     def update(self, id:int, username="", password="", email="", firstname="", lastname="", birthday="", is_business="", business_name="", business_type=""):
-        user_selected = self.select(id=id)
+        user_selected = self.select_one(id=id)
         if username=="":
             username=user_selected['username']
         if password=="":
@@ -84,19 +86,22 @@ class transactionDB:
         self.mydb = mydb
         self.mycursor = self.mydb.cursor()
 
+    def get_current_cash_cc(self, user_id):
+        # Get current cash_balance and cc_balance
+        sql_current = f"""SELECT id, cc_balance, cash_balance FROM `user` WHERE id={user_id};"""
+        self.mycursor.execute(sql_current)
+        row = self.mycursor.fetchone()
+        if row == None:
+            return {"msg" : f"Not found user_id = {user_id}"}
+        result = {"cc_balance": row[1], "cash_balance": row[2]}
+        return result
+
     def transfer(self, user_id, send_id, receive_id, amount:int, status=1):
         if amount<0:
             return {"msg": "amount must more than 0"}
-        # Get current cash_balance and cc_balance
-        result = {}
-        sql_current = f"""SELECT id, cc_balance, cash_balance FROM `user` WHERE id IN ({send_id},{receive_id});"""
-        self.mycursor.execute(sql_current)
-        row = self.mycursor.fetchall()
-        for row_i in row:
-            result[row_i[0]] = {"cc_balance": row_i[1], "cash_balance": row_i[2]}
-
-        send_current = result[send_id]
-        receive_current = result[receive_id]
+        
+        send_current = self.get_current_cash_cc(send_id)
+        receive_current = self.get_current_cash_cc(receive_id)
 
         # transfer cc_balance
         # NOTE!!! cash_balance is not calculate yet
@@ -118,4 +123,69 @@ class transactionDB:
         else:
             return {"msg": "cc_balance is not enough for transfering."}
 
-    # def deposit_cash(self, user_id, send_id, receive_id, amount:int, status=1):
+    def deposit_cash(self, user_id, amount:int, status=1):
+        if amount<0:
+            return {"msg": "amount must more than 0"}
+        user_current = self.get_current_cash_cc(user_id=user_id)
+
+        sql = f"""UPDATE `user` SET cash_balance={user_current["cash_balance"]+amount} WHERE id={user_id}"""
+        sql_cash_trasaction = f"""INSERT INTO `cash_transaction` (`user_id`,`amount`) VALUES ({user_id}, {amount})"""
+        self.mycursor.execute(sql)
+        self.mydb.commit()
+        self.mycursor.execute(sql_cash_trasaction)
+        self.mydb.commit()
+        return {"msg": f"user_id: {user_id} cash balance += {amount} complete"}
+
+    def exchange_cash_cc(self, user_id, amount:int, mode:int, status=1):
+        exchange_rate = 100. / 1000.
+        user_current = self.get_current_cash_cc(user_id=user_id) 
+        cash_current = user_current["cash_balance"]
+        cc_current = user_current["cc_balance"]
+
+        if mode == 0: # Cash to CC
+            if cash_current - amount < 0:
+                return {"msg" : "Your cash is not enough to exchange"}
+            sql = f"""UPDATE `user` SET cc_balance={cc_current + (amount/exchange_rate)}, cash_balance={cash_current-amount} WHERE id={user_id}"""
+            sql_exchange_transaction = f"""INSERT INTO `exchange_transaction` (`user_id`,`amount`, `mode`) VALUES ({user_id}, {amount}, {mode})"""
+            self.mycursor.execute(sql)
+            self.mydb.commit()
+            self.mycursor.execute(sql_exchange_transaction)
+            self.mydb.commit()
+            return {"msg" : f"user_id: {user_id} Exchange from {amount} cash to {(amount/exchange_rate)} cc"}
+        elif mode == 1: # CC to Cash
+            if cc_current - amount < 0:
+                return {"msg" : "Your cc is not enough to exchange"}
+            sql = f"""UPDATE `user` SET `cash_balance`='{cash_current+ (amount*exchange_rate)}', `cc_balance`='{cc_current-amount}' WHERE `id`={user_id};"""
+            print(sql)
+            sql_exchange_transaction = f"""INSERT INTO `exchange_transaction` (`user_id`,`amount`, `mode`) VALUES ({user_id}, {amount}, {mode})"""
+            self.mycursor.execute(sql)
+            self.mydb.commit()
+            self.mycursor.execute(sql_exchange_transaction)
+            self.mydb.commit()
+            return {"msg" : f"user_id: {user_id} Exchange from {amount} cc to {(amount*exchange_rate)} cash"}
+
+class serviceAPI:
+    def __init__(self):
+        self.mydb = mydb
+        self.mycursor = self.mydb.cursor()
+
+    def login(self, username, password):
+        result = {}
+        sql = f"""SELECT * FROM `user` WHERE (username='{username}' OR email='{username}') AND password='{password}'; """
+        self.mycursor.execute(sql)
+        column = ["id", "username", "password", "email", "firstname", "lastname", "is_business", "business_name", "business_type", "bod", "cash_balance", "cc_balance"]
+        row = self.mycursor.fetchone()
+        if row == None:
+            return {"msg" : f"Not found username or password"}
+        for idx, r in enumerate(row[:-1]):
+            result[column[idx]] = r
+        return result
+    
+    def register(self, username:str, password:str, email:str, firstname:str, lastname:str, birthday:datetime.datetime, is_business=0, business_name="NULL", business_type="NULL", created_at=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')):
+        # Check username, email or other avoid same value 
+        res = userDB().insert(username, password, email, firstname, lastname, birthday, is_business, business_name, business_type, created_at)
+        if res["msg"] == "INSERT SUCESSFULLY":
+            return {"msg" : "register is successful"}
+        
+    def transfer_cash_to_cc(self):
+        pass
