@@ -6,10 +6,6 @@ import datetime
 
 app = FastAPI()
 
-origins = [
-    "http://localhost"
-]
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=['*'],
