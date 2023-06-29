@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from connectDB import userDB, transactionDB, serviceAPI
-import datetime
+from datetime import datetime, timedelta, timezone
 
 app = FastAPI()
 
@@ -29,7 +29,7 @@ def read_data(id:int):
     return res
 
 @app.post("/user/", tags=["user"])
-def insert_data(username:str, password:str, email:str, firstname:str, lastname:str, birthday:datetime.datetime, is_business=0, business_name="NULL", business_type="NULL"):
+def insert_data(username:str, password:str, email:str, firstname:str, lastname:str, birthday:datetime, is_business=0, business_name="NULL", business_type="NULL"):
     res = userDB().insert(username=username, password=password, email=email, firstname=firstname, lastname=lastname, 
                 birthday=birthday, is_business=is_business, business_name=business_name, business_type=business_type)
     return res
@@ -79,7 +79,7 @@ def login(username:str, password:str):
     return res
 
 @app.post("/service/register/", tags=["service"])
-def register(username:str, password:str, email:str, firstname:str, lastname:str, birthday:datetime.datetime, is_business=0, business_name="NULL", business_type="NULL", created_at=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')):
+def register(username:str, password:str, email:str, firstname:str, lastname:str, birthday:datetime, is_business=0, business_name="NULL", business_type="NULL", created_at=datetime.now(tz=timezone(timedelta(hours=7))).strftime('%Y-%m-%d %H:%M:%S')):
     res = serviceAPI().register(username=username, password=password, email=email, firstname=firstname, lastname=lastname,
                                 birthday=birthday, is_business=is_business, business_name=business_name, business_type=business_type,
                                 created_at=created_at)
