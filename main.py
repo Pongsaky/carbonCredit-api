@@ -89,3 +89,20 @@ def register(username:str, password:str, email:str, firstname:str, lastname:str,
 def transfer_cash_to_cc(user_id, send_id, receive_id, amount:int):
     res = transactionDB().transfer(user_id=user_id, send_id=send_id, receive_id=receive_id, amount=amount)
     return res
+
+@app.post("/service/send-email/", tags=["service"])
+def sendEMAIL(password, sender="sender@gmail.com", recipient="recipient@gmail.com", plain_text="Hi,\nThis is a test email.\nHere is the link you wanted:\nhttps://www.python.org", 
+                  html_text="""
+                    <html>
+                      <head></head>
+                      <body>
+                        <h1>Hello My name is นายพงศกร แก้วใจดี</h1>
+                        <p>Hi,<br>
+                          This is a test email.<br>
+                          Here is the <a href="https://www.python.org">link</a> you wanted.
+                        </p>
+                      </body>
+                    </html>
+                  """):
+    res = serviceAPI().send_mail(sender=sender, recipient=recipient, password=password, plain_text=plain_text, html_text=html_text)
+    return res

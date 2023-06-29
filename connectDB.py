@@ -2,6 +2,7 @@ import mysql.connector
 from datetime import datetime, timedelta, timezone
 from dotenv import load_dotenv
 import os
+from sendEmail import autoHTMLEmail
 
 load_dotenv()
 
@@ -185,7 +186,7 @@ class serviceAPI:
             result[column[idx]] = r
         return result
     
-    def register(self, username:str, password:str, email:str, firstname:str, lastname:str, birthday:datetime, is_business=0, business_name="NULL", business_type="NULL", created_at=datetime.datetime.now(tz=timezone(timedelta(hours=7))).strftime('%Y-%m-%d %H:%M:%S')):
+    def register(self, username:str, password:str, email:str, firstname:str, lastname:str, birthday:datetime, is_business=0, business_name="NULL", business_type="NULL", created_at=datetime.now(tz=timezone(timedelta(hours=7))).strftime('%Y-%m-%d %H:%M:%S')):
         # Check username, email or other avoid same value 
         res = userDB().insert(username, password, email, firstname, lastname, birthday, is_business, business_name, business_type, created_at)
         if res["msg"] == "INSERT SUCESSFULLY":
@@ -193,3 +194,19 @@ class serviceAPI:
         
     def transfer_cash_to_cc(self):
         pass
+
+    def send_mail(self, password, sender="sender@gmail.com", recipient="recipient@gmail.com", plain_text="Hi,\nThis is a test email.\nHere is the link you wanted:\nhttps://www.python.org", 
+                  html_text="""
+                    <html>
+                      <head></head>
+                      <body>
+                        <h1>Hello My name is นายพงศกร แก้วใจดี</h1>
+                        <p>Hi,<br>
+                          This is a test email.<br>
+                          Here is the <a href="https://www.python.org">link</a> you wanted.
+                        </p>
+                      </body>
+                    </html>
+                  """):
+        res = autoHTMLEmail(sender=sender, recipient=recipient, password=password, plain_text=plain_text, html_text=html_text)
+        return res
