@@ -1,11 +1,12 @@
 import mysql.connector
 import datetime
+import os
 
 mydb = mysql.connector.connect(
-        host="34.143.137.245",
-        user="root",
-        password="CoalLa1234",
-        database="carboncredit"
+        host=os.getenv("host"),
+        user=os.getenv("user"),
+        password=os.getenv("password"),
+        database=os.getenv("database")
     )
 print("Connection sucessfully")
 class userDB:
