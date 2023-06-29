@@ -45,7 +45,7 @@ class userDB:
             result[column[idx]] = r
         return result
 
-    def insert(self, username:str, password:str, email:str, firstname:str, lastname:str, birthday:datetime.datetime, is_business=0, business_name="NULL", business_type="NULL", created_at=datetime.now(tz=timezone(timedelta(hours=7))).strftime('%Y-%m-%d %H:%M:%S')):
+    def insert(self, username:str, password:str, email:str, firstname:str, lastname:str, birthday:datetime, is_business=0, business_name="NULL", business_type="NULL", created_at=datetime.now(tz=timezone(timedelta(hours=7))).strftime('%Y-%m-%d %H:%M:%S')):
         sql = f"INSERT INTO `user` (`username`, `password`, `email`, `firstname`, `lastname`, `is_business`, `business_name`, `business_type`, `birthday`, `created_at`) VALUES ('{username}', '{password}', '{email}', '{firstname}', '{lastname}', {is_business}, '{business_name}', '{business_type}', '{birthday}', '{created_at}');"
         self.mycursor.execute(sql)
         self.mydb.commit()
@@ -185,7 +185,7 @@ class serviceAPI:
             result[column[idx]] = r
         return result
     
-    def register(self, username:str, password:str, email:str, firstname:str, lastname:str, birthday:datetime.datetime, is_business=0, business_name="NULL", business_type="NULL", created_at=datetime.datetime.now(tz=timezone(timedelta(hours=7))).strftime('%Y-%m-%d %H:%M:%S')):
+    def register(self, username:str, password:str, email:str, firstname:str, lastname:str, birthday:datetime, is_business=0, business_name="NULL", business_type="NULL", created_at=datetime.datetime.now(tz=timezone(timedelta(hours=7))).strftime('%Y-%m-%d %H:%M:%S')):
         # Check username, email or other avoid same value 
         res = userDB().insert(username, password, email, firstname, lastname, birthday, is_business, business_name, business_type, created_at)
         if res["msg"] == "INSERT SUCESSFULLY":
