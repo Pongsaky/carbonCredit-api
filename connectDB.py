@@ -1,6 +1,9 @@
 import mysql.connector
 import datetime
+from dotenv import load_dotenv
 import os
+
+load_dotenv()
 
 mydb = mysql.connector.connect(
         host=os.getenv("host"),
