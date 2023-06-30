@@ -17,6 +17,32 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+class User(BaseModel):
+    username : str
+    password : str
+    email : str
+    firstname : str
+    lastname : str
+    birthday : datetime
+    is_business : int
+    business_name : Union[str, None] = "NULL"
+    business_type : Union[str, None] = "NULL"
+
+class Cc_transaction(BaseModel):
+    user_id : int
+    send_id : int
+    receive_id : int
+    amount : int
+
+class Cash_transaction(BaseModel):
+    user_id : int
+    amount : int
+
+class Exchange_transaction(BaseModel):
+    user_id : int
+    amount : int
+    mode : int
+
 @app.get("/")
 def main():
     return {"msg": "Hello world"}
@@ -32,21 +58,20 @@ def read_data(id:int):
     return res
 
 @app.post("/user/", tags=["user"])
-def insert_data(username:str, password:str, email:str, firstname:str, lastname:str, birthday:datetime, is_business=0, business_name="NULL", business_type="NULL"):
-    res = userDB().insert(username=username, password=password, email=email, firstname=firstname, lastname=lastname, 
-                birthday=birthday, is_business=is_business, business_name=business_name, business_type=business_type)
+def insert_data(user : User):
+    res = userDB().insert(username=user.username, password=user.password, email=user.email, firstname=user.firstname, lastname=user.lastname, 
+                birthday=user.birthday, is_business=user.is_business, business_name=user.business_name, business_type=user.business_type, created_at=datetime.now(tz=timezone(timedelta(hours=7))).strftime('%Y-%m-%d %H:%M:%S'))
     return res
 
-
-@app.put("/user/", tags=["user"])
-def update_data(id:int, username="", password="", email="", firstname="", lastname="", birthday="", is_business="", business_name="", business_type=""):
-    res = userDB().update(id=id, username=username, password=password, email=email, firstname=firstname, lastname=lastname, birthday=birthday, 
-                is_business=is_business, business_name=business_name, business_type=business_type)
+@app.put("/user/{user_id}", tags=["user"])
+def update_data(user_id :int, user : User):
+    res = userDB().update(id=user_id, username=user.username, password=user.password, email=user.email, firstname=user.firstname, lastname=user.lastname, birthday=user.birthday, 
+                is_business=user.is_business, business_name=user.business_name, business_type=user.business_type)
     return res
 
-@app.delete("/user/", tags=["user"])
-def delete_data(id:int):
-    res = userDB().delete(id=id)
+@app.delete("/user/{user_id}", tags=["user"])
+def delete_data(user_id :int):
+    res = userDB().delete(id=user_id)
     return res
 
 @app.get("/transaction/", tags=["transaction"])
@@ -54,22 +79,22 @@ def welcome_transaction_api():
     return {"msg" : "Welcome to transaction API"}
 
 @app.post("/transaction/transfer/", tags=["transaction"])
-def cc_transfer(user_id:int, send_id:int, receive_id:int, amount:int):
-    res = transactionDB().transfer(user_id=user_id, send_id=send_id, receive_id=receive_id, amount=amount)
+def cc_transfer(transaction : Cc_transaction):
+    res = transactionDB().transfer(user_id=transaction.user_id, send_id=transaction.send_id, receive_id=transaction.receive_id, amount=transaction.amount)
     return res
 
 @app.post("/transaction/exchange/", tags=["transaction"])
-def exchange(user_id:int, amount:int, mode:int):
+def exchange(transaction : Exchange_transaction):
     """
     mode = 0 -> cash to cc \n
     mode = 1 -> cc to cash 
     """
-    res = transactionDB().exchange_cash_cc(user_id=user_id, amount=amount, mode=mode)
+    res = transactionDB().exchange_cash_cc(user_id=transaction.user_id, amount=transaction.amount, mode=transaction.mode)
     return res
 
 @app.post("/transaction/deposit/", tags=["transaction"])
-def deposit_cash(user_id:int, amount:int):
-    res = transactionDB().deposit_cash(user_id=user_id, amount=amount)
+def deposit_cash(transaction : Cash_transaction):
+    res = transactionDB().deposit_cash(user_id=transaction.user_id, amount=transaction.amount)
     return res
 
 @app.get("/service/", tags=["service"])
@@ -82,18 +107,17 @@ def login(username:str, password:str):
     return res
 
 @app.post("/service/register/", tags=["service"])
-def register(username:str, password:str, email:str, firstname:str, lastname:str, birthday:datetime, is_business=0, business_name="NULL", business_type="NULL", created_at=datetime.now(tz=timezone(timedelta(hours=7))).strftime('%Y-%m-%d %H:%M:%S')):
-    res = serviceAPI().register(username=username, password=password, email=email, firstname=firstname, lastname=lastname,
-                                birthday=birthday, is_business=is_business, business_name=business_name, business_type=business_type,
-                                created_at=created_at)
+def register(user : User):
+    res = serviceAPI().register(username=user.username, password=user.password, email=user.email, firstname=user.firstname, lastname=user.lastname, 
+                birthday=user.birthday, is_business=user.is_business, business_name=user.business_name, business_type=user.business_type, created_at=datetime.now(tz=timezone(timedelta(hours=7))).strftime('%Y-%m-%d %H:%M:%S'))
     return res
 
 @app.post("/service/transer-cash-to-cc/", tags=["service"])
-def transfer_cash_to_cc(user_id, send_id, receive_id, amount:int):
-    res = transactionDB().transfer(user_id=user_id, send_id=send_id, receive_id=receive_id, amount=amount)
+def transfer_cash_to_cc(transaction : Cc_transaction):
+    res = transactionDB().transfer(user_id=transaction.user_id, send_id=transaction.send_id, receive_id=transaction.receive_id, amount=transaction.amount)
     return res
 
-@app.post("/service/send-email/", tags=["service"])
+@app.get("/service/send-email/", tags=["service"])
 def sendEMAIL(password, sender="sender@gmail.com", recipient="recipient@gmail.com", plain_text="Hi,\nThis is a test email.\nHere is the link you wanted:\nhttps://www.python.org", 
                   html_text="""
                     <html>
