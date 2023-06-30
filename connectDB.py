@@ -59,25 +59,25 @@ class userDB:
         return {"msg": "DELETE SUCESSFULLY"}
 
     def update(self, id:int, username="", password="", email="", firstname="", lastname="", birthday="", is_business="", business_name="", business_type=""):
-        user_selected = self.select_one(id=id)
-        if username=="":
-            username=user_selected['username']
-        if password=="":
-            password=user_selected['password']
-        if email=="":
-            email=user_selected['email']
-        if firstname=="":
-            firstname=user_selected['firstname']    
-        if lastname=="":
-            lastname=user_selected['lastname']
-        if birthday=="":
-            birthday=user_selected['bod']
-        if is_business=="":
-            is_business=user_selected['is_business']
-        if business_name=="":
-            business_name=user_selected['business_name']
-        if business_type=="":
-            business_type=user_selected['business_type']
+        # user_selected = self.select_one(id=id)
+        # if username=="":
+        #     username=user_selected['username']
+        # if password=="":
+        #     password=user_selected['password']
+        # if email=="":
+        #     email=user_selected['email']
+        # if firstname=="":
+        #     firstname=user_selected['firstname']    
+        # if lastname=="":
+        #     lastname=user_selected['lastname']
+        # if birthday=="":
+        #     birthday=user_selected['bod']
+        # if is_business=="":
+        #     is_business=user_selected['is_business']
+        # if business_name=="":
+        #     business_name=user_selected['business_name']
+        # if business_type=="":
+        #     business_type=user_selected['business_type']
 
         sql = f"""UPDATE `user` SET `username`='{username}', `password`='{password}', `email`='{email}', `firstname`='{firstname}', `lastname`='{lastname}', `is_business`='{is_business}', `business_name`='{business_name}', `business_type`='{business_type}', `birthday`='{birthday}'
                 WHERE `id`={id};"""

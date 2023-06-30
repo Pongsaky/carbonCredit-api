@@ -18,13 +18,13 @@ app.add_middleware(
 )
 
 class User(BaseModel):
-    username : str
-    password : str
-    email : str
-    firstname : str
-    lastname : str
-    birthday : datetime
-    is_business : int
+    username : str = "username"
+    password : str = "password"
+    email : str = "email@gmail.com"
+    firstname : str = "firstname"
+    lastname : str = "lastname"
+    birthday : datetime = datetime.now(tz=timezone(timedelta(hours=7))).strftime('%Y-%m-%d %H:%M:%S')
+    is_business : int = 0
     business_name : Union[str, None] = "NULL"
     business_type : Union[str, None] = "NULL"
 
@@ -42,6 +42,10 @@ class Exchange_transaction(BaseModel):
     user_id : int
     amount : int
     mode : int
+
+class Login(BaseModel):
+    username : str
+    password : str
 
 @app.get("/")
 def main():
@@ -102,8 +106,8 @@ def welcome_service_api():
     return {"msg" : "Welcome to service API"}
 
 @app.post("/service/login/", tags=["service"])
-def login(username:str, password:str):
-    res = serviceAPI().login(username=username, password=password)
+def login(login : Login):
+    res = serviceAPI().login(username=login.username, password=login.password)
     return res
 
 @app.post("/service/register/", tags=["service"])
