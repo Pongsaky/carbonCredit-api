@@ -1,5 +1,8 @@
+from typing import Union
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 
 from connectDB import userDB, transactionDB, serviceAPI
 from datetime import datetime, timedelta, timezone
@@ -106,3 +109,12 @@ def sendEMAIL(password, sender="sender@gmail.com", recipient="recipient@gmail.co
                   """):
     res = serviceAPI().send_mail(sender=sender, recipient=recipient, password=password, plain_text=plain_text, html_text=html_text)
     return res
+
+class Person(BaseModel):
+    name: str
+    lastname : str
+    tel : Union[str, None] = None
+
+@app.post("/test/")
+async def hello_person(person : Person):
+    return f"Hello {person.name} {person.lastname} tel: {person.tel} "
